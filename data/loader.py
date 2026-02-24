@@ -176,12 +176,18 @@ def get_data_status(df=None) -> dict:
 def refresh_data():
     """Force refresh data from Google Drive."""
     # Clear cache
-    load_all_data.clear()
+    st.cache_data.clear()
 
     # Clear local files
     import shutil
     if os.path.exists(DATA_DIR):
-        shutil.rmtree(DATA_DIR)
+        try:
+            shutil.rmtree(DATA_DIR)
+        except Exception as e:
+            st.warning(f"Could not clear local cache: {e}")
 
     # Re-download
-    st.rerun()
+    if hasattr(st, "rerun"):
+        st.rerun()
+    else:
+        st.experimental_rerun()
