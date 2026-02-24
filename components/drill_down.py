@@ -15,8 +15,8 @@ import pandas as pd
 import os
 import glob
 from typing import Any, List, Optional
-from config.settings import SILVER_PATH
 
+from data.loader import SILVER_DIR
 # ── Màu sắc nhất quán ──────────────────────────────────────────────────────
 _SENTIMENT_COLOR = {"positive": "#00c896", "neutral": "#f5a623", "negative": "#ef476f"}
 _URGENCY_COLOR   = {"high": "#ef476f",     "medium": "#f5a623",  "low": "#00c896"}
@@ -548,7 +548,7 @@ def _render_chat_bubbles(conv_text: str):
 @st.cache_data(ttl=300)
 def _load_silver_conversations() -> pd.DataFrame:
     """Load Silver conversations (cached 5 min) để fallback full_conversation."""
-    silver_conv_path = f"{SILVER_PATH}/conversations"
+    silver_conv_path = SILVER_DIR
     try:
         if os.path.exists(silver_conv_path):
             from deltalake import DeltaTable
