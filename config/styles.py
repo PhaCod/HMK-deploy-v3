@@ -112,9 +112,10 @@ CUSTOM_CSS = """
         background: rgba(255, 255, 255, 0.05);
     }
     
-    /* Hide Streamlit branding */
+    /* Hide Streamlit branding and header */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    .stAppHeader {visibility: hidden;}
     
     /* Custom scrollbar */
     ::-webkit-scrollbar {
