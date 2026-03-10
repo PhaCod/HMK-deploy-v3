@@ -6,7 +6,8 @@ Reads Gold + Silver Parquet files from Google Drive public share link.
 
 Setup:
 1. Share your lakehouse folder on Google Drive (Anyone with link → Viewer)
-2. Set GDRIVE_FOLDER_ID in Streamlit secrets
+2. Set GDRIVE_FOLDER_ID in Streamlit secrets  (ưu tiên)
+   HOẶC để nguyên — folder IDs mặc định đã được nhúng sẵn bên dưới.
 3. Uses gdown to download parquet files
 """
 import streamlit as st
@@ -16,6 +17,27 @@ import glob
 import io
 import tempfile
 from config.settings import CACHE_TTL
+
+
+# ============================================
+# DEFAULT FOLDER IDs (HMK Production)
+# Ưu tiên: st.secrets → fallback về giá trị này
+# Cho phép deploy trên domain riêng mà không cần config secrets
+# ============================================
+_DEFAULT_GOLD_FOLDER_ID   = "175rTXS8xpgpW6cECOn6S7mxuor4uLOiq"
+_DEFAULT_SILVER_FOLDER_ID = "1aJ1NONGOQXBn4sbXW90E5N4ywt4Gs984"
+_DEFAULT_REPORT_FOLDER_ID = "1RUyMgujndsyoRAqhtv6XVURcNGbTR5XL"
+
+
+def _secret(key: str, default: str = "") -> str:
+    """Đọc secret: st.secrets → env var → default hardcoded."""
+    try:
+        val = st.secrets.get(key, "")
+        if val:
+            return val
+    except Exception:
+        pass
+    return os.environ.get(key, default)
 
 
 # ============================================
@@ -50,9 +72,9 @@ def _download_from_gdrive():
     Ưu tiên: GOLD_FOLDER_ID + SILVER_FOLDER_ID (Option B)
     Fallback: LAKEHOUSE_FOLDER_ID — folder cha chứa toàn bộ lakehouse (Option A)
     """
-    gold_folder_id   = st.secrets.get("GOLD_FOLDER_ID", "")
-    silver_folder_id = st.secrets.get("SILVER_FOLDER_ID", "")
-    lake_folder_id   = st.secrets.get("LAKEHOUSE_FOLDER_ID", "")
+    gold_folder_id   = _secret("GOLD_FOLDER_ID",   _DEFAULT_GOLD_FOLDER_ID)
+    silver_folder_id = _secret("SILVER_FOLDER_ID", _DEFAULT_SILVER_FOLDER_ID)
+    lake_folder_id   = _secret("LAKEHOUSE_FOLDER_ID", "")
 
     if gold_folder_id or silver_folder_id:
         # Option B: từng folder riêng
@@ -127,9 +149,7 @@ def _read_parquet_by_pattern(base_dir: str, layer: str) -> pd.DataFrame:
 
 def _ensure_data():
     """Check if data exists locally, download if not."""
-    # Xác định nơi cần kiểm tra tuỳ theo mode (folder riêng vs folder cha)
-    if st.secrets.get("LAKEHOUSE_FOLDER_ID", "") and not st.secrets.get("GOLD_FOLDER_ID", ""):
-        # Option A: tìm bất kỳ parquet nào trong DATA_DIR
+    if _secret("LAKEHOUSE_FOLDER_ID") and not _secret("GOLD_FOLDER_ID", _DEFAULT_GOLD_FOLDER_ID):
         existing = glob.glob(os.path.join(DATA_DIR, "**", "*.parquet"), recursive=True)
     else:
         existing = glob.glob(os.path.join(GOLD_DIR, "**", "*.parquet"), recursive=True) if os.path.exists(GOLD_DIR) else []
@@ -148,7 +168,7 @@ def load_all_data() -> dict:
     _ensure_data()
 
     # Khi dùng LAKEHOUSE_FOLDER_ID, phân biệt gold/silver qua tên path
-    if st.secrets.get("LAKEHOUSE_FOLDER_ID", "") and not st.secrets.get("GOLD_FOLDER_ID", ""):
+    if _secret("LAKEHOUSE_FOLDER_ID") and not _secret("GOLD_FOLDER_ID", _DEFAULT_GOLD_FOLDER_ID):
         gold_df   = _read_parquet_by_pattern(DATA_DIR, "gold")
         silver_df = _read_parquet_by_pattern(DATA_DIR, "silver")
     else:
@@ -244,8 +264,8 @@ def load_reports() -> list:
     """
     import re
 
-    report_folder_id = st.secrets.get("REPORT_FOLDER_ID", "")
-    lake_folder_id   = st.secrets.get("LAKEHOUSE_FOLDER_ID", "")
+    report_folder_id = _secret("REPORT_FOLDER_ID", _DEFAULT_REPORT_FOLDER_ID)
+    lake_folder_id   = _secret("LAKEHOUSE_FOLDER_ID", "")
 
     # Nếu không có folder ID nào → không có gì để tải
     if not report_folder_id and not lake_folder_id:
@@ -269,7 +289,7 @@ def load_reports() -> list:
             st.warning(f"Report download issue: {str(e)[:120]}")
 
     # Đọc tất cả file .md — tìm trong REPORTS_DIR hoặc DATA_DIR (lakehouse mode)
-    if st.secrets.get("LAKEHOUSE_FOLDER_ID", "") and not report_folder_id:
+    if _secret("LAKEHOUSE_FOLDER_ID") and not _secret("REPORT_FOLDER_ID", _DEFAULT_REPORT_FOLDER_ID):
         # Tìm .md bất kỳ đâu trong DATA_DIR có "report" trong path
         md_files = [
             f for f in glob.glob(os.path.join(DATA_DIR, "**", "*.md"), recursive=True)
