@@ -37,7 +37,8 @@ TAB_NAMES = [
     "💬 Sentiment",
     "👥 Agent Team",
     "💰 Revenue",
-    "🔍 Explorer"
+    "🔍 Explorer",
+    "📋 Daily Reports"
 ]
 
 # ============================================

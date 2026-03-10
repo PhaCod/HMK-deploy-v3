@@ -18,7 +18,7 @@ from datetime import datetime
 # Internal imports
 from config.settings import PAGE_CONFIG, TAB_NAMES, VERSION, APP_TITLE
 from config.styles import apply_styles
-from data.loader import load_all_data, get_data_status, refresh_data
+from data.loader import load_all_data, get_data_status, refresh_data, load_reports
 from components.sidebar import render_sidebar
 from tabs import (
     tab_executive,
@@ -27,7 +27,8 @@ from tabs import (
     tab_sentiment,
     tab_agent,
     tab_revenue,
-    tab_explorer
+    tab_explorer,
+    tab_report
 )
 
 
@@ -42,9 +43,17 @@ def main():
     # Load Data
     data_dict = load_all_data()
     df_gold = data_dict.get('ai_unified')
+    reports = load_reports()
 
-    if df_gold is None or df_gold.empty:
+    if (df_gold is None or df_gold.empty) and not reports:
         _render_no_data_state()
+        return
+
+    # If only reports available (no gold), show reports-only view
+    if df_gold is None or df_gold.empty:
+        st.title(f"📊 {APP_TITLE}")
+        st.warning("⚠️ Chưa có Gold data. Hiển thị Daily Reports.")
+        tab_report.render(reports)
         return
 
     # Render Sidebar (returns filtered df)
@@ -80,6 +89,9 @@ def main():
 
     with tabs[6]:
         tab_explorer.render(filtered_df)
+
+    with tabs[7]:
+        tab_report.render(reports)
 
     # Footer
     _render_footer()

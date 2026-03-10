@@ -1,0 +1,19 @@
+# Secrets — KHÔNG commit lên GitHub
+.streamlit/secrets.toml
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Temp files
+tmpclaude*
+*.tmp
+
+# Data cache (local only)
+hmk_lakehouse_cache/
+
+# OS
+.DS_Store
+Thumbs.db

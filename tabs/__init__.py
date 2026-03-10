@@ -7,7 +7,8 @@ from . import (
     tab_sentiment,
     tab_agent,
     tab_revenue,
-    tab_explorer
+    tab_explorer,
+    tab_report
 )
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     'tab_sentiment',
     'tab_agent',
     'tab_revenue',
-    'tab_explorer'
+    'tab_explorer',
+    'tab_report'
 ]
