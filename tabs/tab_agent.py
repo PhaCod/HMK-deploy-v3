@@ -10,6 +10,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from utils.helpers import safe_float, safe_int, safe_percentage, parse_list_column
 from utils.charts import create_chart_layout
+from utils.ai_insights import render_insight_box
 from components.drill_down import render_drill_section
 
 
@@ -134,6 +135,17 @@ def _render_skills_radar(df: pd.DataFrame):
         **create_chart_layout()
     )
     st.plotly_chart(fig, use_container_width=True, key='agent_radar')
+    if skill_avgs:
+        _top_skill  = max(skill_avgs, key=skill_avgs.get)
+        _weak_skill = min(skill_avgs, key=skill_avgs.get)
+        render_insight_box('agent_radar', {
+            "skill_scores": {k: round(float(v), 2) for k, v in skill_avgs.items()},
+            "top_skill": _top_skill,
+            "top_skill_score": round(float(skill_avgs[_top_skill]), 2),
+            "weakest_skill": _weak_skill,
+            "weakest_skill_score": round(float(skill_avgs[_weak_skill]), 2),
+            "team_overall_avg": round(sum(skill_avgs.values()) / len(skill_avgs), 2),
+        })
 
 
 def _render_disc_matching(df: pd.DataFrame):
@@ -262,6 +274,16 @@ def _render_strengths(df: pd.DataFrame):
     top_strength = strengths.index[0]
     top_pct = (strengths.iloc[0] / len(strengths_series)) * 100
     st.caption(f"🏆 Top strength: **{top_strength}** ({top_pct:.1f}%)")
+    render_insight_box('agent_strengths_bar', {
+        "top_strengths": [
+            {"strength": str(s), "count": int(c),
+             "pct": round(int(c) / len(strengths_series) * 100, 1)}
+            for s, c in strengths.items()
+        ],
+        "total_observations": int(len(strengths_series)),
+        "top_strength": str(top_strength),
+        "top_strength_pct": round(float(top_pct), 1),
+    })
 
 
 def _render_improvements(df: pd.DataFrame):

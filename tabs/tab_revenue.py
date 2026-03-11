@@ -11,6 +11,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from utils.helpers import safe_float, safe_percentage
 from utils.charts import create_chart_layout
+from utils.ai_insights import render_insight_box
 from components.drill_down import render_drill_section
 
 
@@ -274,6 +275,17 @@ def _render_revenue_funnel(df: pd.DataFrame):
             overall_rate = (final / initial) * 100
             st.metric("Overall Conversion", f"{overall_rate:.1f}%")
 
+    _initial = funnel_stages[0][1]
+    render_insight_box('rev_funnel', {
+        "stages": [
+            {"name": str(s[0]), "count": int(s[1]),
+             "pct_of_first": round(int(s[1]) / _initial * 100, 1) if _initial > 0 else 0}
+            for s in funnel_stages
+        ],
+        "overall_conversion_rate": round(int(funnel_stages[-1][1]) / _initial * 100, 1) if _initial > 0 else 0,
+        "stage_count": int(len(funnel_stages)),
+    })
+
 
 def _render_product_interest(df: pd.DataFrame):
     """Render product interest distribution."""
@@ -343,6 +355,16 @@ def _render_urgency_breakdown(df: pd.DataFrame):
     )
     fig.update_layout(**create_chart_layout())
     st.plotly_chart(fig, use_container_width=True, key='rev_urgency_pie')
+    _total_urg = int(urgency_counts.sum())
+    _high_count = int(sum(
+        urgency_counts.get(k, 0) for k in ['high', 'urgent', 'immediate']
+    ))
+    render_insight_box('rev_urgency_pie', {
+        "urgency_distribution": {str(k): int(v) for k, v in urgency_counts.items()},
+        "high_urgency_pct": round(_high_count / _total_urg * 100, 1) if _total_urg else 0,
+        "high_urgency_count": _high_count,
+        "total": _total_urg,
+    })
 
 
 def _render_competitor_analysis(df: pd.DataFrame):
@@ -383,6 +405,17 @@ def _render_competitor_analysis(df: pd.DataFrame):
         
         st.info("💡 **Tip:** Analyze what customers are saying about competitors to identify differentiation opportunities.")
 
+    render_insight_box('rev_competitor_bar', {
+        "top_competitors": [
+            {"brand": str(b), "count": int(c)}
+            for b, c in competitor_counts.items()
+        ],
+        "total_mentions": int(competitor_counts.sum()),
+        "market_pressure_pct": round(safe_percentage(int(competitor_counts.sum()), len(df)), 1),
+        "top_competitor": str(competitor_counts.index[0]),
+        "total_conversations": int(len(df)),
+    })
+
 
 def _render_price_range(df: pd.DataFrame):
     """Render price range distribution."""
@@ -409,3 +442,13 @@ def _render_price_range(df: pd.DataFrame):
     fig.update_layout(**create_chart_layout())
     fig.update_layout(showlegend=False, xaxis_title="Price Range", yaxis_title="Count")
     st.plotly_chart(fig, use_container_width=True, key='rev_price_bar')
+    _total_price = int(price_counts.sum())
+    render_insight_box('rev_price_bar', {
+        "price_distribution": [
+            {"range": str(r), "count": int(c),
+             "pct": round(int(c) / _total_price * 100, 1) if _total_price else 0}
+            for r, c in price_counts.items()
+        ],
+        "top_range": str(price_counts.index[0]),
+        "total": _total_price,
+    })

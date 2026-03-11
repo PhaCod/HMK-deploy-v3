@@ -10,6 +10,7 @@ import plotly.express as px
 from datetime import timedelta
 from utils.helpers import safe_float, safe_percentage, get_delta_indicator
 from utils.charts import create_chart_layout
+from utils.ai_insights import render_insight_box
 from components.drill_down import render_drill_section
 
 
@@ -154,6 +155,15 @@ def _render_time_series(df: pd.DataFrame):
     fig.update_layout(**create_chart_layout())
     fig.update_traces(fill='tozeroy', fillcolor='rgba(102, 126, 234, 0.3)')
     st.plotly_chart(fig, use_container_width=True, key='exec_time_series')
+    render_insight_box('exec_time_series', {
+        "total_conversations": int(daily_counts['Count'].sum()),
+        "days_tracked": int(len(daily_counts)),
+        "peak_day": str(daily_counts.loc[daily_counts['Count'].idxmax(), 'Date']),
+        "peak_count": int(daily_counts['Count'].max()),
+        "avg_daily": round(float(daily_counts['Count'].mean()), 1),
+        "date_start": str(daily_counts['Date'].min()),
+        "date_end": str(daily_counts['Date'].max()),
+    })
 
 
 def _render_intent_pie(df: pd.DataFrame):
@@ -179,6 +189,16 @@ def _render_intent_pie(df: pd.DataFrame):
     fig.update_layout(**create_chart_layout())
     fig.update_traces(textposition='outside', textinfo='percent+label')
     st.plotly_chart(fig, use_container_width=True, key='exec_intent_pie')
+    _total_intents = int(intent_counts.sum())
+    render_insight_box('exec_intent_pie', {
+        "total": _total_intents,
+        "dominant_intent": str(intent_counts.index[0]),
+        "top_intents": [
+            {"intent": str(k), "count": int(v),
+             "pct": round(int(v) / _total_intents * 100, 1)}
+            for k, v in intent_counts.items()
+        ],
+    })
 
 
 def _render_hourly_heatmap(df: pd.DataFrame):
@@ -209,6 +229,16 @@ def _render_hourly_heatmap(df: pd.DataFrame):
     fig.update_layout(**create_chart_layout())
     fig.update_layout(xaxis_title="Hour", yaxis_title="Day")
     st.plotly_chart(fig, use_container_width=True, key='exec_heatmap')
+    _flat = heatmap_data.stack()
+    _peak_pos = _flat.idxmax()
+    render_insight_box('exec_heatmap', {
+        "busiest_day": str(_peak_pos[0]),
+        "busiest_hour": int(_peak_pos[1]),
+        "peak_count": int(_flat.max()),
+        "total_conversations": int(_flat.sum()),
+        "top_3_days": [str(d) for d in heatmap_data.sum(axis=1).nlargest(3).index.tolist()],
+        "top_3_hours": [int(h) for h in heatmap_data.sum().nlargest(3).index.tolist()],
+    })
 
 
 def _render_funnel_breakdown(df: pd.DataFrame):

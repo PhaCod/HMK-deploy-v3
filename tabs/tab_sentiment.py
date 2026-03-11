@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.express as px
 from utils.helpers import safe_float, safe_percentage
 from utils.charts import create_chart_layout
+from utils.ai_insights import render_insight_box
 from components.drill_down import render_drill_section
 
 
@@ -118,6 +119,13 @@ def _render_sentiment_distribution(df: pd.DataFrame):
     )
     fig.update_layout(**create_chart_layout())
     st.plotly_chart(fig, use_container_width=True, key='sent_dist_pie')
+    _total_sent = int(sentiment_counts.sum())
+    render_insight_box('sent_dist_pie', {
+        "sentiment_distribution": {str(k): int(v) for k, v in sentiment_counts.items()},
+        "positive_pct": round(int(sentiment_counts.get('positive', 0)) / _total_sent * 100, 1) if _total_sent else 0,
+        "negative_pct": round(int(sentiment_counts.get('negative', 0)) / _total_sent * 100, 1) if _total_sent else 0,
+        "total": _total_sent,
+    })
 
 
 def _render_sentiment_trend(df: pd.DataFrame):
@@ -146,6 +154,18 @@ def _render_sentiment_trend(df: pd.DataFrame):
     fig.add_hline(y=0, line_dash="dash", line_color="white", opacity=0.3)
     fig.update_layout(**create_chart_layout())
     st.plotly_chart(fig, use_container_width=True, key='sent_trend_line')
+    if len(daily_sentiment) >= 2:
+        _trend = "increasing" if daily_sentiment['Avg Sentiment'].iloc[-1] > daily_sentiment['Avg Sentiment'].iloc[0] else "decreasing"
+        _min_idx = daily_sentiment['Avg Sentiment'].idxmin()
+        render_insight_box('sent_trend_line', {
+            "overall_avg_sentiment": round(float(daily_sentiment['Avg Sentiment'].mean()), 3),
+            "lowest_day": str(daily_sentiment.loc[_min_idx, 'Date']),
+            "lowest_score": round(float(daily_sentiment.loc[_min_idx, 'Avg Sentiment']), 3),
+            "trend_direction": _trend,
+            "days_tracked": int(len(daily_sentiment)),
+            "date_start": str(daily_sentiment['Date'].min()),
+            "date_end": str(daily_sentiment['Date'].max()),
+        })
 
 
 def _render_behavioral_signals(df: pd.DataFrame):
@@ -201,6 +221,12 @@ def _render_trust_level(df: pd.DataFrame):
     high_trust = trust_counts.get('high', 0) + trust_counts.get('very_high', 0)
     high_trust_pct = (high_trust / len(trust_data)) * 100 if len(trust_data) > 0 else 0
     st.caption(f"✅ High trust customers: **{high_trust_pct:.1f}%**")
+    render_insight_box('sent_trust_pie', {
+        "trust_distribution": {str(k): int(v) for k, v in trust_counts.items()},
+        "high_trust_pct": round(float(high_trust_pct), 1),
+        "low_trust_count": int(trust_counts.get('low', 0) + trust_counts.get('very_low', 0)),
+        "total": int(len(trust_data)),
+    })
 
 
 def _render_price_sensitivity(df: pd.DataFrame):

@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.express as px
 from utils.helpers import safe_float
 from utils.charts import create_chart_layout, CHART_COLORS
+from utils.ai_insights import render_insight_box
 from components.drill_down import render_drill_section
 
 
@@ -128,7 +129,14 @@ def _render_disc_distribution(df: pd.DataFrame):
     )
     fig.update_layout(**create_chart_layout())
     st.plotly_chart(fig, use_container_width=True, key='intel_disc_pie')
-    
+    _total_disc = int(disc_counts.sum())
+    render_insight_box('intel_disc_pie', {
+        "dominant_type": str(disc_counts.index[0]),
+        "dominant_pct": round(int(disc_counts.iloc[0]) / _total_disc * 100, 1),
+        "disc_distribution": {str(k): int(v) for k, v in disc_counts.items()},
+        "total": _total_disc,
+    })
+
     # DISC Legend
     st.markdown("""
     **DISC Profiles:**
@@ -162,6 +170,13 @@ def _render_generation_cohort(df: pd.DataFrame):
     fig.update_layout(**create_chart_layout())
     fig.update_layout(xaxis_title="Generation", yaxis_title="Count", showlegend=False)
     st.plotly_chart(fig, use_container_width=True, key='intel_gen_bar')
+    _total_gen = int(gen_counts.sum())
+    render_insight_box('intel_gen_bar', {
+        "dominant_generation": str(gen_counts.index[0]),
+        "dominant_pct": round(int(gen_counts.iloc[0]) / _total_gen * 100, 1),
+        "generation_distribution": {str(k): int(v) for k, v in gen_counts.items()},
+        "total": _total_gen,
+    })
 
 
 def _render_lifestyle_segments(df: pd.DataFrame):
@@ -238,5 +253,13 @@ def _render_disc_intent_matrix(df: pd.DataFrame):
     fig.update_layout(**create_chart_layout())
     fig.update_layout(xaxis_title="Intent", yaxis_title="DISC Profile")
     st.plotly_chart(fig, use_container_width=True, key='intel_disc_matrix')
-    
-    st.info("💡 **Insight:** This matrix shows which customer personality types are associated with each intent. Use this to tailor your communication approach.")
+    _stacked = cross_tab.stack().sort_values(ascending=False).head(6)
+    render_insight_box('intel_disc_matrix', {
+        "top_combinations": [
+            {"disc": str(idx[0]), "intent": str(idx[1]), "count": int(v)}
+            for idx, v in _stacked.items()
+        ],
+        "disc_types": [str(x) for x in cross_tab.index.tolist()],
+        "intent_types": [str(x) for x in cross_tab.columns.tolist()],
+        "total_conversations": int(cross_tab.values.sum()),
+    })

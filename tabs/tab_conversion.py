@@ -10,6 +10,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from utils.helpers import safe_float, safe_percentage
 from utils.charts import create_chart_layout
+from utils.ai_insights import render_insight_box
 from components.drill_down import render_drill_section
 
 
@@ -162,6 +163,18 @@ def _render_purchase_funnel(df: pd.DataFrame):
     fig.update_layout(**create_chart_layout())
     fig.update_layout(funnelmode="stack", showlegend=False)
     st.plotly_chart(fig, use_container_width=True, key='conv_funnel')
+    render_insight_box('conv_funnel', {
+        "stages": [
+            {"label": l, "count": c,
+             "pct_of_first": round(c / total_customers * 100, 1) if total_customers > 0 else 0}
+            for l, c in zip(funnel_labels, funnel_data)
+        ],
+        "first_stage": funnel_labels[0] if funnel_labels else "",
+        "last_stage": funnel_labels[-1] if funnel_labels else "",
+        "conversion_pct": round(
+            funnel_data[-1] / total_customers * 100, 1
+        ) if funnel_data and total_customers > 0 else 0,
+    })
     
     # Show actual stage breakdown
     st.markdown("**Actual customers at each stage:**")
@@ -260,6 +273,17 @@ def _render_dropoff_analysis(df: pd.DataFrame):
     
     # Actionable recommendation
     _render_dropoff_recommendation(str(worst_step))
+    render_insight_box('conv_dropoff', {
+        "total_conversations": int(total_conversations),
+        "total_dropoffs": int(total_dropoffs),
+        "dropoff_rate_pct": round(float(dropoff_rate), 1),
+        "worst_step": str(worst_step),
+        "worst_step_count": int(worst_count),
+        "top_dropoffs": [
+            {"step": str(s), "count": int(c)}
+            for s, c in dropoff_counts.head(5).items()
+        ],
+    })
 
 
 def _render_dropoff_recommendation(worst_step: str):
@@ -317,3 +341,13 @@ def _render_churn_reasons(df: pd.DataFrame):
             st.info("💡 Improve inventory management to reduce stockouts")
         elif 'trust' in top_reason.lower():
             st.info("💡 Focus on building trust through reviews and guarantees")
+
+    render_insight_box('conv_churn', {
+        "top_churn_reasons": [
+            {"reason": str(r), "count": int(c),
+             "pct": round(int(c) / int(churn_counts.sum()) * 100, 1)}
+            for r, c in churn_counts.items()
+        ],
+        "total_churned": int(churn_counts.sum()),
+        "top_reason": str(churn_counts.index[0]),
+    })
