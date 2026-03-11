@@ -16,7 +16,7 @@ Usage in tab files:
     })
 
 Requirements:
-    pip install google-generativeai>=0.7.0 openai>=1.0.0
+    pip install google-genai>=1.0.0 openai>=1.0.0
     # Both are optional — dashboard works without them.
 
 Secrets (.streamlit/secrets.toml):
@@ -32,7 +32,8 @@ import streamlit as st
 
 # ─── optional SDK imports ─────────────────────────────────────────────────────
 try:
-    import google.generativeai as genai
+    from google import genai as _genai
+    from google.genai import types as _genai_types
     _GEMINI_AVAILABLE = True
 except ImportError:
     _GEMINI_AVAILABLE = False
@@ -226,14 +227,12 @@ def generate_chart_insight(chart_id: str, data_summary_json: str) -> Optional[st
         gemini_key = _get_gemini_key()
         if gemini_key:
             try:
-                genai.configure(api_key=gemini_key)
-                model = genai.GenerativeModel(
-                    model_name="gemini-1.5-flash",
-                    system_instruction=_SYSTEM_PROMPT,
-                )
-                response = model.generate_content(
-                    user_prompt,
-                    generation_config=genai.types.GenerationConfig(
+                client = _genai.Client(api_key=gemini_key)
+                response = client.models.generate_content(
+                    model="gemini-1.5-flash",
+                    contents=user_prompt,
+                    config=_genai_types.GenerateContentConfig(
+                        system_instruction=_SYSTEM_PROMPT,
                         max_output_tokens=300,
                         temperature=0.4,
                     ),
