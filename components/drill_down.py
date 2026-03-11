@@ -277,13 +277,13 @@ def _render_conversation_list(filtered: pd.DataFrame, key_prefix: str) -> Option
     )
 
     options = []
-    for _, row in shown.iterrows():
+    for i, (_, row) in enumerate(shown.iterrows()):
         date  = str(row.get("conversation_date", ""))[:10]
         intent = _shorten(str(row.get("intent_primary", "—")), 20)
         sent   = str(row.get("sentiment_overall", "")).lower()
         dot    = "🟢" if sent == "positive" else ("🔴" if sent == "negative" else "🟡")
         msgs   = row.get("message_count") or row.get("total_messages") or "?"
-        options.append(f"{dot} {date}  ·  {intent}  ·  {msgs} msgs")
+        options.append(f"#{i+1:03d} {dot} {date}  ·  {intent}  ·  {msgs} msgs")
 
     if not options:
         st.warning("Không có conversation nào.")
@@ -608,7 +608,10 @@ def _conversion_rate(df: pd.DataFrame) -> float:
     if "funnel_is_successful" not in df.columns:
         return 0.0
     try:
-        return df["funnel_is_successful"].astype(float).mean() * 100
+        series = df["funnel_is_successful"].map(
+            {True: 1, False: 0, "True": 1, "False": 0, 1: 1, 0: 0, "1": 1, "0": 0}
+        )
+        return float(pd.to_numeric(series, errors="coerce").mean(skipna=True) * 100)
     except Exception:
         return 0.0
 

@@ -105,11 +105,11 @@ def _render_kpis(df: pd.DataFrame, current_period: pd.DataFrame, previous_period
     
     with col3:
         if 'predicted_csat' in df.columns:
-            avg_csat = safe_float(df['predicted_csat'].mean())
-            prev_csat = safe_float(previous_period['predicted_csat'].mean()) if 'predicted_csat' in previous_period.columns and not previous_period.empty else 0
+            avg_csat = safe_float(pd.to_numeric(df['predicted_csat'], errors='coerce').mean())
+            prev_csat = safe_float(pd.to_numeric(previous_period['predicted_csat'], errors='coerce').mean()) if 'predicted_csat' in previous_period.columns and not previous_period.empty else 0
             st.metric(
                 "Avg CSAT",
-                f"{avg_csat:.2f}/10",
+                f"{avg_csat:.2f}/5",
                 delta=f"{avg_csat - prev_csat:+.2f}" if prev_csat > 0 else None
             )
         else:

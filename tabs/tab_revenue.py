@@ -258,8 +258,10 @@ def _render_revenue_funnel(df: pd.DataFrame):
             if stage_count > 0:
                 retention = (next_count / stage_count) * 100
                 drop_off = 100 - retention
-                
-                if drop_off > 50:
+
+                if next_count > stage_count:
+                    st.warning(f"⚠️ {stage_name} → {next_name}: metrics từ cột khác nhau, không so sánh được")
+                elif drop_off > 50:
                     st.error(f"🔴 {stage_name} → {next_name}: {drop_off:.0f}% drop")
                 elif drop_off > 30:
                     st.warning(f"🟡 {stage_name} → {next_name}: {drop_off:.0f}% drop")
@@ -312,8 +314,8 @@ def _render_product_interest(df: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True, key='rev_product_bar')
     
     top_product = product_counts.index[0]
-    top_pct = (product_counts.iloc[0] / len(df)) * 100
-    st.caption(f"🔥 Top interest: **{top_product}** ({top_pct:.1f}% of conversations)")
+    top_pct = (product_counts.iloc[0] / len(all_products)) * 100
+    st.caption(f"🔥 Top interest: **{top_product}** ({product_counts.iloc[0]:,} mentions, {top_pct:.1f}% of all mentions)")
 
 
 def _render_urgency_breakdown(df: pd.DataFrame):

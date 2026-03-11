@@ -58,7 +58,11 @@ def _render_kpis(df: pd.DataFrame):
     with col1:
         if 'funnel_is_successful' in df.columns:
             total_funnels = len(df)
-            successful = safe_float(df['funnel_is_successful'].sum())
+            successful = int(
+                df['funnel_is_successful'].map(
+                    {True: 1, False: 0, 'True': 1, 'False': 0, 1: 1, 0: 0, '1': 1, '0': 0}
+                ).fillna(0).sum()
+            )
             conversion = safe_percentage(successful, total_funnels)
             st.metric("Overall Conversion", f"{conversion:.1f}%")
         else:

@@ -128,7 +128,8 @@ def _render_sentiment_trend(df: pd.DataFrame):
         st.info("Sentiment score or date column not found")
         return
     
-    daily_sentiment = df.groupby(df['conversation_date'].dt.date)['sentiment_score'].mean().reset_index()
+    sentiment_numeric = pd.to_numeric(df['sentiment_score'], errors='coerce')
+    daily_sentiment = sentiment_numeric.groupby(df['conversation_date'].dt.date).mean().reset_index()
     daily_sentiment.columns = ['Date', 'Avg Sentiment']
     
     if daily_sentiment.empty:

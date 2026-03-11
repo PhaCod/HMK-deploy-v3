@@ -182,8 +182,8 @@ def load_all_data() -> dict:
             and 'full_conversation' in silver_df.columns):
         needs_merge = (
             'full_conversation' not in gold_df.columns
-            or gold_df['full_conversation'].isna().all()
-            or (gold_df['full_conversation'].astype(str).isin(['', 'nan', 'None'])).all()
+            or gold_df['full_conversation'].isna().any()
+            or (gold_df['full_conversation'].astype(str).isin(['', 'nan', 'None'])).any()
         )
         if needs_merge:
             silver_fc = silver_df[['conversation_id', 'full_conversation']].drop_duplicates(
@@ -193,7 +193,9 @@ def load_all_data() -> dict:
                 silver_fc, on='conversation_id', how='left', suffixes=('', '_silver')
             )
             if 'full_conversation_silver' in gold_df.columns:
-                gold_df['full_conversation'] = gold_df['full_conversation_silver']
+                gold_df['full_conversation'] = gold_df['full_conversation'].fillna(
+                    gold_df['full_conversation_silver']
+                )
                 gold_df.drop(columns=['full_conversation_silver'], inplace=True)
 
     # Parse dates
@@ -218,18 +220,20 @@ def get_data_status(df=None) -> dict:
     processed = 0
 
     ai_fields = ['intent_primary', 'sentiment_overall', 'disc_primary', 'agent_overall_score']
-    if any(col in df.columns for col in ai_fields):
-        for col in ai_fields:
-            if col in df.columns:
-                processed = int(df[col].notna().sum())
-                break
+    ai_cols_present = [c for c in ai_fields if c in df.columns]
+    if ai_cols_present:
+        processed = int(df[ai_cols_present].notna().any(axis=1).sum())
 
     # Quality metrics (production)
     quality_info = {}
     if 'ai_parse_success' in df.columns:
-        quality_info['parse_success'] = int(df['ai_parse_success'].sum())
+        quality_info['parse_success'] = int(
+            pd.to_numeric(df['ai_parse_success'], errors='coerce').sum()
+        )
     if 'ai_quality_score' in df.columns:
-        quality_info['avg_quality'] = round(df['ai_quality_score'].mean(), 1)
+        quality_info['avg_quality'] = round(
+            pd.to_numeric(df['ai_quality_score'], errors='coerce').mean(), 1
+        )
 
     return {
         'total': total,

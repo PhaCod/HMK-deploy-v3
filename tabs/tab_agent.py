@@ -60,21 +60,21 @@ def _render_kpis(df: pd.DataFrame):
     
     with col1:
         if 'agent_overall_score' in df.columns:
-            avg_score = safe_float(df['agent_overall_score'].mean())
+            avg_score = safe_float(pd.to_numeric(df['agent_overall_score'], errors='coerce').mean())
             st.metric("Team Avg Score", f"{avg_score:.1f}/10")
         else:
             st.metric("Avg Score", "N/A")
-    
+
     with col2:
         if 'empathy_score' in df.columns:
-            avg_empathy = safe_float(df['empathy_score'].mean())
+            avg_empathy = safe_float(pd.to_numeric(df['empathy_score'], errors='coerce').mean())
             st.metric("Avg Empathy", f"{avg_empathy:.1f}/10")
         else:
             st.metric("Empathy", "N/A")
-    
+
     with col3:
         if 'dead_air_count' in df.columns:
-            avg_dead_air = safe_float(df['dead_air_count'].mean())
+            avg_dead_air = safe_float(pd.to_numeric(df['dead_air_count'], errors='coerce').mean())
             st.metric("Avg Dead Air", f"{avg_dead_air:.1f}")
         else:
             st.metric("Dead Air", "N/A")
@@ -109,8 +109,9 @@ def _render_skills_radar(df: pd.DataFrame):
     
     skill_avgs = {}
     for k, v in available_skills.items():
-        if df[k].notna().any():
-            skill_avgs[v] = safe_float(df[k].mean())
+        numeric_col = pd.to_numeric(df[k], errors='coerce')
+        if numeric_col.notna().any():
+            skill_avgs[v] = safe_float(numeric_col.mean())
     
     if not skill_avgs:
         st.info("No skill scores available")

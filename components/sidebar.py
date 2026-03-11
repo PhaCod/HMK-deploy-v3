@@ -76,32 +76,27 @@ def _apply_date_filter(df_original: pd.DataFrame) -> pd.DataFrame:
     
     if 'conversation_date' not in df_original.columns or df_original.empty:
         return df_original.copy()
-    
-    df_original['conversation_date'] = pd.to_datetime(
-        df_original['conversation_date'], 
-        errors='coerce'
-    )
-    
-    min_date = df_original['conversation_date'].min()
-    max_date = df_original['conversation_date'].max()
-    
+
+    date_col = pd.to_datetime(df_original['conversation_date'], errors='coerce')
+
+    min_date = date_col.min()
+    max_date = date_col.max()
+
     if pd.isna(min_date) or pd.isna(max_date):
         return df_original.copy()
-    
+
     date_range = st.date_input(
         "Select Period",
         value=(min_date.date(), max_date.date()),
         min_value=min_date.date(),
         max_value=max_date.date()
     )
-    
+
     if len(date_range) == 2:
         start_date, end_date = date_range
-        return df_original[
-            (df_original['conversation_date'].dt.date >= start_date) &
-            (df_original['conversation_date'].dt.date <= end_date)
-        ].copy()
-    
+        mask = (date_col.dt.date >= start_date) & (date_col.dt.date <= end_date)
+        return df_original[mask].copy()
+
     return df_original.copy()
 
 
