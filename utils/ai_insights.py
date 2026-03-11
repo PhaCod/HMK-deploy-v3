@@ -26,6 +26,7 @@ Secrets (.streamlit/secrets.toml):
 
 from __future__ import annotations
 import json
+import os
 from typing import Optional
 
 import streamlit as st
@@ -183,21 +184,45 @@ CHART_PROMPTS: dict[str, str] = {
 }
 
 
-# ─── secret helpers ───────────────────────────────────────────────────────────
+# ─── default keys for self-hosted deployment ──────────────────────────────────
+# Fill these in when deploying on your own domain (no secrets.toml needed).
+# Leave empty ("") to require secrets.toml or OPENAI_API_KEY env var instead.
+# WARNING: Do NOT commit a filled key to a public GitHub repo.
+_DEFAULT_GEMINI_KEY = ""          # AIzaSy... from https://aistudio.google.com/app/apikey
+_DEFAULT_OPENAI_KEY = ""          # sk-proj-... from https://platform.openai.com/api-keys
+
+
+# ─── secret helpers — fallback chain: st.secrets → env var → hardcoded ────────
 def _get_gemini_key() -> Optional[str]:
+    # 1. Streamlit secrets (Streamlit Cloud / local .streamlit/secrets.toml)
     try:
         val = st.secrets.get("GEMINI_API_KEY", "")
-        return val if val else None
+        if val:
+            return val
     except Exception:
-        return None
+        pass
+    # 2. Environment variable (self-hosted server: export GEMINI_API_KEY=...)
+    val = os.environ.get("GEMINI_API_KEY", "")
+    if val:
+        return val
+    # 3. Hardcoded default (self-hosted, fill _DEFAULT_GEMINI_KEY above)
+    return _DEFAULT_GEMINI_KEY if _DEFAULT_GEMINI_KEY else None
 
 
 def _get_openai_key() -> Optional[str]:
+    # 1. Streamlit secrets
     try:
         val = st.secrets.get("OPENAI_API_KEY", "")
-        return val if val else None
+        if val:
+            return val
     except Exception:
-        return None
+        pass
+    # 2. Environment variable (self-hosted server: export OPENAI_API_KEY=...)
+    val = os.environ.get("OPENAI_API_KEY", "")
+    if val:
+        return val
+    # 3. Hardcoded default (fill _DEFAULT_OPENAI_KEY above)
+    return _DEFAULT_OPENAI_KEY if _DEFAULT_OPENAI_KEY else None
 
 
 # ─── core cached generation ───────────────────────────────────────────────────
