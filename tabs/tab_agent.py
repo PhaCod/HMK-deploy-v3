@@ -196,7 +196,10 @@ def _render_quality_metrics(df: pd.DataFrame):
     
     with q4:
         if 'sarcasm_flag' in df.columns:
-            sarcasm_detected = df['sarcasm_flag'].sum() if df['sarcasm_flag'].dtype == bool else 0
+            sarcasm_detected = int(
+                df['sarcasm_flag'].astype(str).str.lower()
+                .isin(['true', '1', 'yes']).sum()
+            )
             st.metric("⚠️ Sarcasm Detected", f"{sarcasm_detected:,}")
         else:
             st.metric("Sarcasm", "N/A")

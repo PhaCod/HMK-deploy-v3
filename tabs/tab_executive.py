@@ -69,7 +69,7 @@ def _calculate_periods(df: pd.DataFrame):
     week_ago = today - timedelta(days=7)
     two_weeks_ago = today - timedelta(days=14)
     
-    current_period = df[df['conversation_date'] > week_ago]
+    current_period = df[df['conversation_date'] >= week_ago]
     previous_period = df[
         (df['conversation_date'] > two_weeks_ago) & 
         (df['conversation_date'] <= week_ago)
@@ -83,12 +83,12 @@ def _render_kpis(df: pd.DataFrame, current_period: pd.DataFrame, previous_period
     col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
-        current_count = len(df)
+        current_count = len(current_period)
         prev_count = len(previous_period) if not previous_period.empty else 0
         st.metric(
-            "Total Conversations",
+            "Conversations (7d)",
             f"{current_count:,}",
-            delta=get_delta_indicator(len(current_period), prev_count) if prev_count > 0 else None
+            delta=get_delta_indicator(current_count, prev_count) if prev_count > 0 else None
         )
     
     with col2:

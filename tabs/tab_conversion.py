@@ -136,18 +136,12 @@ def _render_purchase_funnel(df: pd.DataFrame):
     if not funnel_data:
         st.info("No funnel stages found")
         return
-    
-    total_customers = sum(funnel_data)
-    cumulative_funnel = []
-    remaining = total_customers
-    for i, count in enumerate(funnel_data):
-        cumulative_funnel.append(remaining)
-        if i < len(funnel_data) - 1:
-            remaining = remaining - count
-    
+
+    total_customers = funnel_data[0] if funnel_data else 1
+
     fig = go.Figure(go.Funnel(
         y=funnel_labels,
-        x=cumulative_funnel,
+        x=funnel_data,
         texttemplate="%{value:,}<br>%{percentInitial:.1%}",
         textposition="inside",
         marker=dict(
@@ -180,13 +174,21 @@ def _render_dropoff_analysis(df: pd.DataFrame):
     # Fallback: Calculate from purchase_stage
     if (dropoff_data is None or dropoff_data.empty) and 'purchase_stage' in df.columns:
         stage_counts = df['purchase_stage'].dropna().value_counts()
-        funnel_order = ['awareness', 'interest', 'consideration', 'decision', 'purchase']
+        # Map cả tên tiếng Anh lẫn tiếng Việt → label hiển thị
+        funnel_order = [
+            ('nhan_thuc',     'awareness',     'Nhận Thức'),
+            ('quan_tam',      'interest',      'Quan Tâm'),
+            ('can_nhac',      'consideration', 'Cân Nhắc'),
+            ('quyet_dinh',    'decision',      'Quyết Định'),
+            ('mua_hang',      'purchase',      'Mua Hàng'),
+        ]
         ordered_counts = []
-        
-        for stage in funnel_order:
+
+        for vi_key, en_key, label in funnel_order:
             for idx in stage_counts.index:
-                if stage.lower() in str(idx).lower():
-                    ordered_counts.append((stage.capitalize(), stage_counts[idx]))
+                idx_lower = str(idx).lower()
+                if vi_key in idx_lower or en_key in idx_lower:
+                    ordered_counts.append((label, stage_counts[idx]))
                     break
         
         if len(ordered_counts) >= 2:

@@ -86,10 +86,12 @@ def _render_kpis(df: pd.DataFrame):
     
     with col4:
         if 'likely_to_return' in df.columns:
-            if df['likely_to_return'].dtype in ['float64', 'int64', 'bool']:
-                return_rate = safe_float(df['likely_to_return'].mean()) * 100
-            else:
-                return_rate = 0
+            return_rate = (
+                df['likely_to_return']
+                .astype(str).str.lower()
+                .isin(['true', '1', 'yes', 'có', 'co'])
+                .mean() * 100
+            )
             st.metric("Likely to Return", f"{return_rate:.1f}%")
         else:
             st.metric("Return Rate", "N/A")

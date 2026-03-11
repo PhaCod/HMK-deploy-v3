@@ -80,7 +80,10 @@ def _render_kpis_row1(df: pd.DataFrame):
             else:
                 st.metric("Conversion Probability", "N/A")
         elif 'price_mentioned' in df.columns:
-            price_mentioned = df['price_mentioned'].sum() if df['price_mentioned'].dtype == bool else 0
+            price_mentioned = int(
+                df['price_mentioned'].astype(str).str.lower()
+                .isin(['true', '1', 'yes']).sum()
+            )
             rate = safe_percentage(price_mentioned, len(df))
             st.metric("Price Discussed", f"{rate:.1f}%", delta=f"{price_mentioned:,} convos")
         else:

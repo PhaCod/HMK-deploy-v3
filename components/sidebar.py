@@ -139,11 +139,12 @@ def _render_auto_refresh():
     )
     
     if auto_refresh:
-        st.info(f"⏱️ Refreshing every {refresh_interval}s")
-        import time
-        time.sleep(refresh_interval)
-        st.cache_data.clear()
-        st.rerun()
+        try:
+            from streamlit_autorefresh import st_autorefresh
+            st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh_counter")
+            st.info(f"⏱️ Auto-refresh every {refresh_interval}s")
+        except ImportError:
+            st.warning("streamlit-autorefresh not installed. Add to requirements.txt.")
     
     # Manual Refresh
     if st.button("🔄 Refresh Now", use_container_width=True):

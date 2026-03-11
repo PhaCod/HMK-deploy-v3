@@ -124,17 +124,21 @@ def _render_search_filter(df: pd.DataFrame, final_cols: list) -> pd.DataFrame:
         else:
             filter_processed = "All"
     
-    # Apply filters
-    display_df = df[final_cols].copy() if final_cols else df.copy()
-    
-    if search and 'conversation_id' in display_df.columns:
-        display_df = display_df[display_df['conversation_id'].str.contains(search, na=False)]
-    
-    if filter_processed == "Processed Only" and 'ai_processed' in df.columns:
-        display_df = display_df[df['ai_processed'] == True]
-    elif filter_processed == "Failed Only" and 'ai_processed' in df.columns:
-        display_df = display_df[df['ai_processed'] == False]
-    
+    # Apply filters on original df first (avoid index misalignment after column select)
+    filtered_df = df.copy()
+
+    if search and 'conversation_id' in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df['conversation_id'].str.contains(search, na=False)]
+
+    if filter_processed == "Processed Only" and 'ai_processed' in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df['ai_processed'].astype(str).isin(['True', 'true', '1'])]
+    elif filter_processed == "Failed Only" and 'ai_processed' in filtered_df.columns:
+        filtered_df = filtered_df[~filtered_df['ai_processed'].astype(str).isin(['True', 'true', '1'])]
+
+    # Select columns after filtering
+    valid_cols = [c for c in final_cols if c in filtered_df.columns]
+    display_df = filtered_df[valid_cols].copy() if valid_cols else filtered_df.copy()
+
     return display_df
 
 

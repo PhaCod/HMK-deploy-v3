@@ -61,21 +61,27 @@ def _render_kpis(df: pd.DataFrame):
     with col1:
         if 'sentiment_overall' in df.columns:
             positive = (df['sentiment_overall'] == 'positive').sum()
-            st.metric("😊 Positive", f"{positive:,}", delta=f"{safe_percentage(positive, total):.1f}%")
+            st.metric("😊 Positive", f"{positive:,}",
+                      delta=f"{safe_percentage(positive, total):.1f}%",
+                      delta_color="normal")
         else:
             st.metric("Positive", "N/A")
-    
+
     with col2:
         if 'sentiment_overall' in df.columns:
             neutral = (df['sentiment_overall'] == 'neutral').sum()
-            st.metric("😐 Neutral", f"{neutral:,}", delta=f"{safe_percentage(neutral, total):.1f}%")
+            st.metric("😐 Neutral", f"{neutral:,}",
+                      delta=f"{safe_percentage(neutral, total):.1f}%",
+                      delta_color="off")
         else:
             st.metric("Neutral", "N/A")
-    
+
     with col3:
         if 'sentiment_overall' in df.columns:
             negative = (df['sentiment_overall'] == 'negative').sum()
-            st.metric("😞 Negative", f"{negative:,}", delta=f"{safe_percentage(negative, total):.1f}%")
+            st.metric("😞 Negative", f"{negative:,}",
+                      delta=f"{safe_percentage(negative, total):.1f}%",
+                      delta_color="inverse")
         else:
             st.metric("Negative", "N/A")
     
