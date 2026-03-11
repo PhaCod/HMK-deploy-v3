@@ -136,10 +136,16 @@ def _render_purchase_funnel(df: pd.DataFrame):
         if stage in counts.index:
             funnel_data.append(counts[stage])
             funnel_labels.append(stage_labels.get(stage, stage))
-    
+
     if not funnel_data:
         st.info("No funnel stages found")
         return
+
+    # Sort by count descending so chart renders as a proper funnel (wide → narrow)
+    sorted_pairs = sorted(zip(funnel_data, funnel_labels), reverse=True)
+    funnel_data, funnel_labels = zip(*sorted_pairs)
+    funnel_data = list(funnel_data)
+    funnel_labels = list(funnel_labels)
 
     total_customers = funnel_data[0] if funnel_data else 1
 
